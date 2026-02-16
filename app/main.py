@@ -8,8 +8,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="OvaSense AI",
-    description="AI-powered PCOS Risk & Phenotype Detection System",
-    version="1.0.0"
+    description="AI-powered PCOS Risk & Phenotype Detection System with Comprehensive Health Tracking",
+    version="2.0.0"
 )
 
 # CORS middleware for frontend
@@ -27,7 +27,7 @@ app.include_router(router, prefix="/api/v1")
 async def root():
     return {
         "message": "OvaSense AI API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "operational"
     }
 

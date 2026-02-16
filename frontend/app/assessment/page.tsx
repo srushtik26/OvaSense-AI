@@ -12,25 +12,25 @@ interface AssessmentForm {
   height_cm: number
   weight_kg: number
   family_history_pcos: boolean
-  
+
   // Menstrual
   cycle_length_avg: number
   cycles_last_12_months: number
   missed_period_frequency: number
   period_flow_type: 'light' | 'normal' | 'heavy'
   taken_birth_control_pills: boolean
-  
+
   // Symptoms
   acne_severity: number
   facial_hair_growth: number
   hair_thinning: number
   dark_patches_skin: boolean
-  
+
   // Metabolic
   sudden_weight_gain: boolean
   fatigue_level: number
   sugar_cravings: number
-  
+
   // Lifestyle
   stress_level: number
   sleep_hours: number
@@ -80,29 +80,44 @@ export default function AssessmentPage() {
   const onSubmit = async (data: AssessmentForm) => {
     setIsSubmitting(true)
     try {
-      // Ensure all required fields are present, especially the new field
+      // Get user ID from localStorage
+      const userId = localStorage.getItem('ovasense_user_id') || `user_${Date.now()}`
+      if (!localStorage.getItem('ovasense_user_id')) {
+        localStorage.setItem('ovasense_user_id', userId)
+      }
+
+      // Ensure all required fields are present
       const submitData = {
         ...data,
+        user_id: userId,
         taken_birth_control_pills: data.taken_birth_control_pills ?? false
       }
-      
-      console.log('Submitting data:', submitData) // Debug log
-      
+
+      console.log('Submitting assessment:', submitData)
+
       const response = await axios.post('/api/assessments/analyze', submitData)
-      
+
       if (response.data && response.data.assessment_id) {
-        router.push(`/results?id=${response.data.assessment_id}`)
+        // Store assessment completion flag
+        localStorage.setItem('ovasense_assessment_completed', 'true')
+        localStorage.setItem('ovasense_assessment_id', response.data.assessment_id.toString())
+        localStorage.setItem('ovasense_health_score', response.data.risk_score?.toString() || '0')
+        localStorage.setItem('ovasense_phenotype', response.data.phenotype || '')
+
+        // Show success message
+        alert(`✅ Assessment Complete!\n\nYour Health Score: ${response.data.risk_score}/100\nPhenotype: ${response.data.phenotype}\n\nRedirecting to your dashboard...`)
+
+        // Redirect to dashboard home
+        router.push('/dashboard/home')
       } else {
         throw new Error('Invalid response from server')
       }
     } catch (error: any) {
       console.error('Error submitting assessment:', error)
-      
-      // Show more detailed error message
+
       let errorMessage = 'An error occurred. Please try again.'
-      
+
       if (error.response) {
-        // Server responded with error
         const serverError = error.response.data
         if (serverError && serverError.detail) {
           errorMessage = `Error: ${serverError.detail}`
@@ -112,13 +127,11 @@ export default function AssessmentPage() {
           errorMessage = `Server error: ${error.response.status} ${error.response.statusText}`
         }
       } else if (error.request) {
-        // Request was made but no response received
         errorMessage = 'Cannot connect to server. Please make sure the backend is running on port 8000.'
       } else {
-        // Something else happened
         errorMessage = error.message || 'An unexpected error occurred.'
       }
-      
+
       alert(errorMessage)
       setIsSubmitting(false)
     }
@@ -142,7 +155,7 @@ export default function AssessmentPage() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Personal Details</h2>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Age
@@ -150,9 +163,9 @@ export default function AssessmentPage() {
               <input
                 key={`step1-age-${currentStep}`}
                 type="number"
-                {...register('age', { 
-                  required: true, 
-                  min: 13, 
+                {...register('age', {
+                  required: true,
+                  min: 13,
                   max: 60,
                   valueAsNumber: true
                 })}
@@ -170,9 +183,9 @@ export default function AssessmentPage() {
                 key={`step1-height_cm-${currentStep}`}
                 type="number"
                 step="0.1"
-                {...register('height_cm', { 
-                  required: true, 
-                  min: 100, 
+                {...register('height_cm', {
+                  required: true,
+                  min: 100,
                   max: 250,
                   valueAsNumber: true
                 })}
@@ -189,9 +202,9 @@ export default function AssessmentPage() {
                 key={`step1-weight_kg-${currentStep}`}
                 type="number"
                 step="0.1"
-                {...register('weight_kg', { 
-                  required: true, 
-                  min: 30, 
+                {...register('weight_kg', {
+                  required: true,
+                  min: 30,
                   max: 200,
                   valueAsNumber: true
                 })}
@@ -219,7 +232,7 @@ export default function AssessmentPage() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Menstrual Health</h2>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Average cycle length (days)
@@ -228,9 +241,9 @@ export default function AssessmentPage() {
                 key={`step2-cycle_length_avg-${currentStep}`}
                 type="number"
                 step="0.1"
-                {...register('cycle_length_avg', { 
-                  required: true, 
-                  min: 15, 
+                {...register('cycle_length_avg', {
+                  required: true,
+                  min: 15,
                   max: 60,
                   valueAsNumber: true
                 })}
@@ -246,9 +259,9 @@ export default function AssessmentPage() {
               <input
                 key={`step2-cycles_last_12_months-${currentStep}`}
                 type="number"
-                {...register('cycles_last_12_months', { 
-                  required: true, 
-                  min: 0, 
+                {...register('cycles_last_12_months', {
+                  required: true,
+                  min: 0,
                   max: 12,
                   valueAsNumber: true
                 })}
@@ -264,8 +277,8 @@ export default function AssessmentPage() {
               <input
                 key={`step2-missed_period_frequency-${currentStep}`}
                 type="number"
-                {...register('missed_period_frequency', { 
-                  required: true, 
+                {...register('missed_period_frequency', {
+                  required: true,
                   min: 0,
                   valueAsNumber: true
                 })}
@@ -312,7 +325,7 @@ export default function AssessmentPage() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Symptoms</h2>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Acne severity (0-5)
@@ -383,7 +396,7 @@ export default function AssessmentPage() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Metabolic Factors</h2>
-            
+
             <div>
               <label className="flex items-center space-x-2">
                 <input
@@ -437,7 +450,7 @@ export default function AssessmentPage() {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Lifestyle</h2>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Stress level (0-10)
@@ -473,9 +486,9 @@ export default function AssessmentPage() {
               </label>
               <input
                 type="number"
-                {...register('exercise_days_per_week', { 
-                  required: true, 
-                  min: 0, 
+                {...register('exercise_days_per_week', {
+                  required: true,
+                  min: 0,
                   max: 7,
                   valueAsNumber: true
                 })}
@@ -539,7 +552,7 @@ export default function AssessmentPage() {
               </p>
             </div>
           )}
-          
+
           {renderStepContent()}
 
           {/* Navigation Buttons */}
@@ -588,8 +601,8 @@ export default function AssessmentPage() {
         {/* Disclaimer */}
         <div className="mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
           <p className="text-sm text-red-800">
-            <strong>Note:</strong> This assessment is for informational purposes only and 
-            does not constitute a medical diagnosis. Please consult a healthcare professional 
+            <strong>Note:</strong> This assessment is for informational purposes only and
+            does not constitute a medical diagnosis. Please consult a healthcare professional
             for proper evaluation.
           </p>
         </div>

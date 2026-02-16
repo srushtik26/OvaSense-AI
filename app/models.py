@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, JSON
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, JSON, Date, ForeignKey
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -49,4 +49,49 @@ class Assessment(Base):
     
     # User identifier (optional, for tracking over time)
     user_id = Column(String, nullable=True)
+
+
+class PeriodLog(Base):
+    __tablename__ = "period_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+    flow_type = Column(String)  # light, normal, heavy
+    pain_level = Column(Integer)  # 1-10
+    mood = Column(String)  # happy, sad, anxious, irritable, normal
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MentalHealthLog(Base):
+    __tablename__ = "mental_health_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    stress_level = Column(Integer)  # 1-10
+    mood_type = Column(String)  # happy, sad, anxious, irritable, calm, energetic
+    sleep_hours = Column(Float)
+    energy_level = Column(Integer)  # 1-10
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class QuizQuestion(Base):
+    __tablename__ = "quiz_questions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    question = Column(Text, nullable=False)
+    options = Column(JSON, nullable=False)  # List of options
+    correct_answer = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class QuizResult(Base):
+    __tablename__ = "quiz_results"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    score = Column(Integer, nullable=False)
+    total_questions = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
